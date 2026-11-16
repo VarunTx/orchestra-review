@@ -7,7 +7,7 @@ It reads:
 - OpenCode sessions for a project directory, through `opencode session export`.
 
 ```sh
-python -m orchestra_review                      # run from review/, or after `pipx install ./review`
+pipx install "git+https://github.com/VarunTx/orchestra-review"   # PyPI release coming
 orchestra-review --since 30d --opencode-project ~/code/my-app
 orchestra-review --json > review.json
 orchestra-review apply <id> --to ~/.claude/CLAUDE.md   # write a suggested line with a dated marker
@@ -25,4 +25,4 @@ The report shows:
 
 A share holds counts, model names, months and normalised causes. It has no session ids, titles, projects, commands, costs, paths or file names; causes are scrubbed of paths, file names, URLs, emails and credential-shaped strings.
 
-Evidence in the report is redacted for likely secrets. It needs Python 3.11 or later, with no other dependencies. The rules and their limits are in `docs/plans/agent-session-review.md`.
+Evidence in the report is redacted for likely secrets. It needs Python 3.11 or later, with no other dependencies. The rules and their limits are in [`docs/design.md`](docs/design.md). MIT licensed.
