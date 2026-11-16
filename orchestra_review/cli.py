@@ -1,25 +1,36 @@
 """Find the mistakes your coding agents repeat across sessions. Nothing leaves this machine.
 
-Reads Claude Code transcripts (~/.claude/projects) and OpenCode sessions for the given
-project directories (default: the current directory).
+Reads Claude Code transcripts (~/.claude/projects), Codex CLI rollouts (~/.codex/sessions) and OpenCode
+sessions for the given project directories (default: the current directory).
 
   orchestra-review                         report, with a suggested instruction line per recurring mistake
   orchestra-review apply ID --to FILE      append those lines to an instruction file, dated for later measurement
+  orchestra-review sync                    add rule-based lines for mistakes in 3+ sessions, retire lines whose fact changed
+  orchestra-review undo ID                 remove a line and never add it back automatically
+  orchestra-review hook install            block known mistakes live in Claude Code, and sync when a session ends
   orchestra-review share > mine.json       counts and scrubbed causes only, safe to send to someone else
   orchestra-review combine a.json b.json   which mistakes recur for how many people"""
 import argparse
+import importlib.metadata
 from datetime import datetime,timedelta,timezone
 import json
 import os
 import re
 import sys
 
-from . import claude_code,opencode
+from . import claude_code,codex,opencode
 from .detectors import recurring
 from .fixes import suggest
+from . import hooks,share
+from . import state as st
 from .instructions import apply
-from . import share
+from .sync import record,sync,undo
 from .report import build,render
+
+
+def version():
+    try: return importlib.metadata.version('orchestra-review')
+    except importlib.metadata.PackageNotFoundError: return 'unknown'
 
 
 def since(value):
@@ -33,6 +44,7 @@ def since(value):
 def collect(args):
     sessions=[]
     if args.source in ('all','claude-code'): sessions+=claude_code.load(args.claude_dir)
+    if args.source in ('all','codex'): sessions+=codex.load(args.codex_dir)
     if args.source in ('all','opencode'):
         for path in args.opencode_export: sessions+=opencode.load_exports(path)
         if not args.opencode_export:
@@ -43,9 +55,10 @@ def collect(args):
 
 
 def sources(parser):
-    parser.add_argument('--source',choices=['all','claude-code','opencode'],default='all')
+    parser.add_argument('--source',choices=['all','claude-code','codex','opencode'],default='all')
     parser.add_argument('--since',type=since,default=None,help='only sessions active within this window, such as 30d (default: all)')
     parser.add_argument('--claude-dir',default=claude_code.default_root(),help='Claude Code projects directory')
+    parser.add_argument('--codex-dir',default=codex.default_root(),help='Codex CLI sessions directory')
     parser.add_argument('--opencode-project',action='append',help='project directory whose OpenCode sessions to read; repeatable')
     parser.add_argument('--opencode-export',action='append',default=[],help='OpenCode export file or directory of them; repeatable')
     parser.add_argument('--session',help='only sessions whose id starts with this')
@@ -58,7 +71,11 @@ def main(argv=None):
     if argv[:1]==['apply']: return apply_main(argv[1:])
     if argv[:1]==['share']: return share_main(argv[1:])
     if argv[:1]==['combine']: return combine_main(argv[1:])
+    if argv[:1]==['sync']: return sync_main(argv[1:])
+    if argv[:1]==['undo']: return undo_main(argv[1:])
+    if argv[:1]==['hook']: return hook_main(argv[1:])
     parser=argparse.ArgumentParser(prog='orchestra-review',description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--version',action='version',version=f'orchestra-review {version()}')
     sources(parser)
     parser.add_argument('--instructions',action='append',default=[],help='extra instruction file to measure fixes in; repeatable')
     parser.add_argument('--top',type=int,default=10)
@@ -79,10 +96,10 @@ def apply_main(argv):
                         help='also write lines drafted by a model; by default only rule-based lines are written')
     sources(parser)
     args=parser.parse_args(argv)
-    fixes={}
+    fixes,keys={},{}
     for key,hits in recurring(collect(args)):
         fix=suggest(key,hits,args.model,args.model_url)
-        fixes[fix.id]=fix
+        fixes[fix.id]=fix;keys[fix.id]=key
     chosen=[]
     for fid in args.ids:
         fix=fixes.get(fid)
@@ -92,8 +109,51 @@ def apply_main(argv):
         chosen.append(fix)
     path=os.path.expanduser(args.to)
     written=apply(path,chosen)
+    state=st.load()
+    for fix in chosen:
+        record(state,fix,keys[fix.id],path,'manual')
+        if fix.id in written: st.log(state,'added',fix.id,path,fix.line)
+    st.save(state)
     for fix in chosen: print(('added   ' if fix.id in written else 'present ')+f'[{fix.id}] {fix.line}')
     print(f'→ {path}')
+    return 0
+
+
+def sync_main(argv):
+    parser=argparse.ArgumentParser(prog='orchestra-review sync',description='Add rule-based lines for mistakes seen in 3 or more '
+                                   'sessions, retire lines whose fact no longer holds, and respect lines you removed.')
+    parser.add_argument('--dry-run',action='store_true',help='show what would change without writing anything')
+    sources(parser)
+    args=parser.parse_args(argv)
+    changes=sync(collect(args),dry_run=args.dry_run)
+    for action,fid,path,detail in changes: print(f'{action:<16} [{fid}] {path}' + (f' — {detail}' if detail else ''))
+    if not changes: print('Nothing to change.')
+    return 0
+
+
+def undo_main(argv):
+    parser=argparse.ArgumentParser(prog='orchestra-review undo',description='Remove a line and never add it back automatically.')
+    parser.add_argument('id')
+    args=parser.parse_args(argv)
+    removed=undo(args.id)
+    print(f'removed [{args.id}] from {", ".join(removed)}' if removed else f'[{args.id}] was not in any known instruction file; it will not be added automatically')
+    return 0
+
+
+def hook_main(argv):
+    parser=argparse.ArgumentParser(prog='orchestra-review hook',description='Claude Code hooks.')
+    parser.add_argument('action',choices=['install','uninstall',hooks.PRE,hooks.END])
+    parser.add_argument('--settings',default=os.path.expanduser('~/.claude/settings.json'),help='Claude Code settings file')
+    sources(parser)
+    args=parser.parse_args(argv)
+    if args.action==hooks.PRE: return hooks.pre_tool_use()
+    if args.action==hooks.END: return hooks.session_end(lambda:collect(args))
+    if args.action=='install':
+        hooks.install(args.settings)
+        print(f'Installed the PreToolUse and SessionEnd hooks in {args.settings} (original saved as {args.settings}.bak).')
+        print('Run `orchestra-review sync` once so the hook knows which mistakes to block.')
+        return 0
+    print('Removed the orchestra-review hooks.' if hooks.uninstall(args.settings) else 'No orchestra-review hooks were installed.')
     return 0
 
 

@@ -176,3 +176,31 @@ def test_verdict_uses_only_sessions_that_tried_the_action(tmp_path,monkeypatch):
     assert row['verdict']=='too early'  # eight sessions afterwards, but only two tried the import
     more=after+[tried(f't{n}',29,True) for n in range(3,6)]
     assert measure(fid,datetime(2026,11,13,tzinfo=timezone.utc),before+more,hits,exposure(key))['verdict']=='stopped'
+
+
+def test_rules_mined_from_public_runs():
+    cases={
+        ('read',"Invalid `view_range` parameter: [#, #]. Its second element `#` should be smaller than the number of lines in the file: `#`."):'view-range-out-of-file',
+        ('read',"Invalid `view_range` parameter: [#, #]. Its first element `#` should be within the range of lines of the file: [#, #]."):'view-range-out-of-file',
+        ('shell',"bash: syntax error near unexpected token `|'"):'find-exec-pipe',
+        ('shell','SyntaxError: f-string expression part cannot include a backslash'):'old-python-fstring',
+        ('shell',"TypeError: __init__() got an unexpected keyword argument 'capture_output'"):'old-python-capture-output',
+        ('shell',"error: invalid command 'test'"):'setup-py-test',
+        ('shell','grep: tests/: Is a directory'):'grep-directory',
+        ('edit','). No replacement was performed. `new_str` and `old_str` must be different.'):'edit-no-change',
+        ('edit',')` in lines [#, #]. Please ensure it is unique.'):'edit-not-unique',
+        ('edit','Invalid `path` parameter: /workspace/<repo> File already exists at: /workspace/<repo>'):'create-existing-file',
+    }
+    from orchestra_review.fixes import category,fact
+    for key,name in cases.items():
+        assert category(key)==name and rule_fix(key).line and fact(key) is None,key
+    pipe=exposure(('shell',"bash: syntax error near unexpected token `|'"))
+    assert pipe(shell(r'find . -name "*.py" -exec grep -l x {} \; | head')) and not pipe(shell('ls | head'))
+
+
+def test_test_failures_are_not_mistakes():
+    from orchestra_review.detectors import signature
+    for last in ['AssertionError','FAILED (failures=3)','2 failed, 5 passed in 0.3s','❌ Some tests failed!','KeyboardInterrupt',
+                 'Ran 4 tests in 0.01s','Issue reproduced successfully!','E   assert 1 == 2']:
+        assert signature(Step(index=1,tool='Bash',kind='shell',target='pytest',ok=False,error='x\n'+last)) is None,last
+    assert signature(Step(index=1,tool='Bash',kind='shell',target='x',ok=False,error='zsh: command not found: jq'))

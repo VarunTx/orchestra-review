@@ -23,29 +23,96 @@ def fix_id(key):
     return hashlib.sha256('|'.join(key).encode()).hexdigest()[:8]
 
 
-RULES=[  # (name, cause pattern, line, which steps attempted the action)
-    ('missing-python-module',re.compile(r"No module named '([\w.]+)'"),
-     lambda m,kind:f"Python module `{m[1]}` is not importable with the default `python3` here. Use the project's virtualenv "
-              f"(`.venv/bin/python`) if it has one; otherwise ask before installing `{m[1]}`.",
-     lambda m,kind:shell_mentions(m[1])),
-    ('zsh-equals-expansion',re.compile(r'\(eval\):#: ==? ?.*not found|: ==+ not found'),
-     lambda m,kind:"The shell is zsh: an unquoted word starting with `=` (for example `echo ====`) is expanded as a command "
-              "path and fails. Quote separators: `echo '===='`.",
-     lambda m,kind:lambda step:step.kind=='shell' and re.search(r'(?:^|[\s;&|(])=',step.target) is not None),
-    ('zsh-empty-glob',re.compile(r'no matches found'),
-     lambda m,kind:"The shell is zsh: a glob that matches nothing is an error, not an empty list. Check the directory first "
-              "or quote the pattern.",
-     lambda m,kind:lambda step:step.kind=='shell' and re.search(r'[*?]',step.target) is not None),
-    ('missing-program',re.compile(r'`?([\w.+-]+)`? is not installed'),
-     lambda m,kind:(f"Reading PDFs with the Read tool fails here because `{m[1]}` is not installed; extract the text with "
-                    f"an installed tool or library instead." if kind=='read' else
-                    f"`{m[1]}` is not installed on this machine. Don't rely on it; use an installed alternative or ask before installing it."),
-     lambda m,kind:(lambda step:step.kind=='read' and step.target.lower().split(':')[0].endswith('.pdf')) if kind=='read' else shell_mentions(m[1])),
-    ('missing-program',re.compile(r'command not found: ([\w.+-]+)|([\w.+-]+): command not found|^([\w.+-]+) not found'),
-     lambda m,kind:f"`{m[1] or m[2] or m[3]}` is not installed on this machine. Don't rely on it; use an installed alternative "
-              f"or ask before installing it.",
-     lambda m,kind:shell_mentions(m[1] or m[2] or m[3])),
+@dataclass
+class Rule:
+    name:str
+    cause:re.Pattern
+    line:object  # (match, tool kind) -> instruction line
+    attempt:object  # (match, tool kind) -> step predicate: which steps tried the action
+    fact:object  # (match, tool kind) -> the machine fact behind the mistake, re-checked live (see facts.py), or None
+
+
+def program(m):
+    return next(g for g in m.groups() if g)
+
+
+RULES=[
+    Rule('missing-python-module',re.compile(r"No module named '([\w.]+)'"),
+         lambda m,kind:f"Python module `{m[1]}` is not importable with the default `python3` here. Use the project's virtualenv "
+                       f"(`.venv/bin/python`) if it has one; otherwise ask before installing `{m[1]}`.",
+         lambda m,kind:shell_mentions(m[1]),
+         lambda m,kind:{'type':'module-missing','name':m[1].split('.')[0]}),
+    Rule('zsh-equals-expansion',re.compile(r'\(eval\):#: ==? ?.*not found|: ==+ not found'),
+         lambda m,kind:"The shell is zsh: an unquoted word starting with `=` (for example `echo ====`) is expanded as a command "
+                       "path and fails. Quote separators: `echo '===='`.",
+         lambda m,kind:lambda step:step.kind=='shell' and re.search(r'(?:^|[\s;&|(])=',step.target) is not None,
+         lambda m,kind:{'type':'shell-is-zsh','rule':'zsh-equals-expansion'}),
+    Rule('zsh-empty-glob',re.compile(r'no matches found'),
+         lambda m,kind:"The shell is zsh: a glob that matches nothing is an error, not an empty list. Check the directory first "
+                       "or quote the pattern.",
+         lambda m,kind:lambda step:step.kind=='shell' and re.search(r'[*?]',step.target) is not None,
+         lambda m,kind:{'type':'shell-is-zsh','rule':'zsh-empty-glob'}),
+    Rule('missing-program',re.compile(r'`?([\w.+-]+)`? is not installed'),
+         lambda m,kind:(f"Reading PDFs with the Read tool fails here because `{m[1]}` is not installed; extract the text with "
+                        f"an installed tool or library instead." if kind=='read' else
+                        f"`{m[1]}` is not installed on this machine. Don't rely on it; use an installed alternative or ask before installing it."),
+         lambda m,kind:(lambda step:step.kind=='read' and step.target.lower().split(':')[0].endswith('.pdf')) if kind=='read' else shell_mentions(m[1]),
+         lambda m,kind:{'type':'program-missing','name':m[1],'via':'read-pdf' if kind=='read' else 'shell'}),
+    Rule('missing-program',re.compile(r'command not found: ([\w.+-]+)|([\w.+-]+): command not found|^([\w.+-]+) not found'),
+         lambda m,kind:f"`{program(m)}` is not installed on this machine. Don't rely on it; use an installed alternative "
+                       f"or ask before installing it.",
+         lambda m,kind:shell_mentions(program(m)),
+         lambda m,kind:{'type':'program-missing','name':program(m),'via':'shell'}),
+    # Mined from 67,074 public OpenHands runs (research/swe_rebench.py): each recurs across many repositories.
+    Rule('view-range-out-of-file',re.compile(r"Invalid `view_range` parameter"),
+         lambda m,kind:"Keep `view_range` inside the file: start at line 1 or later and end at or before the last line; "
+                       "use -1 as the end to read to the end of the file.",
+         lambda m,kind:lambda step:step.kind=='read',
+         lambda m,kind:None),
+    Rule('edit-no-change',re.compile(r"`new_str` and `old_str` must be different"),
+         lambda m,kind:"Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+         lambda m,kind:lambda step:step.kind=='edit',
+         lambda m,kind:None),
+    Rule('edit-not-unique',re.compile(r"Please ensure it is unique"),
+         lambda m,kind:"When an edit's `old_str` matches more than once, include enough surrounding lines to make it unique.",
+         lambda m,kind:lambda step:step.kind=='edit',
+         lambda m,kind:None),
+    Rule('create-existing-file',re.compile(r"File already exists at:"),
+         lambda m,kind:"Don't use `create` on a file that already exists; edit it with `str_replace`, or choose a new file name.",
+         lambda m,kind:lambda step:step.kind=='edit',
+         lambda m,kind:None),
+    Rule('find-exec-pipe',re.compile(r"syntax error near unexpected token `\|'"),
+         lambda m,kind:"In this shell tool, `find ... -exec ... {} \\;` followed by a pipe is a syntax error; end `-exec` "
+                       "with `+` instead (`-exec grep -l PATTERN {} +`) or pipe `find` into `xargs`.",
+         lambda m,kind:lambda step:step.kind=='shell' and '-exec' in step.target and '|' in step.target,
+         lambda m,kind:None),
+    Rule('old-python-fstring',re.compile(r'f-string expression part cannot include a backslash'),
+         lambda m,kind:"The Python here is older than 3.12, so an f-string expression cannot contain a backslash; "
+                       "compute the value in a variable before the f-string.",
+         lambda m,kind:lambda step:step.kind=='shell' and re.search(r'\bpython[\d.]*\b',step.target) is not None,
+         lambda m,kind:None),
+    Rule('old-python-capture-output',re.compile(r"unexpected keyword argument 'capture_output'"),
+         lambda m,kind:"The Python here is older than 3.7: `subprocess.run` has no `capture_output`; pass "
+                       "`stdout=subprocess.PIPE, stderr=subprocess.PIPE` instead.",
+         lambda m,kind:lambda step:step.kind=='shell' and re.search(r'\bpython[\d.]*\b',step.target) is not None,
+         lambda m,kind:None),
+    Rule('setup-py-test',re.compile(r"error: invalid command 'test'"),
+         lambda m,kind:"`python setup.py test` does not exist in this setuptools; run the tests with `python -m pytest`.",
+         lambda m,kind:shell_mentions('setup.py'),
+         lambda m,kind:None),
+    Rule('grep-directory',re.compile(r'grep: .*: Is a directory'),
+         lambda m,kind:"`grep` on a directory fails without `-r`; use `grep -rn PATTERN DIR`.",
+         lambda m,kind:shell_mentions('grep'),
+         lambda m,kind:None),
 ]
+
+
+def matching(key):
+    for rule in RULES:
+        match=rule.cause.search(key[1])
+        if match: return rule,match
+    return None,None
+
 
 UNSAFE=re.compile(r'https?://|\|\s*(?:ba|z)?sh\b|\bcurl\b|\bwget\b|\bsudo\b|\brm\s+-rf\b|\beval\b|base64',re.I)
 WORD=re.compile(r'[A-Za-z_][\w.+-]{2,}')
@@ -59,24 +126,27 @@ def shell_mentions(word):
 
 
 def rule_fix(key):
-    cause=key[1]
-    for _,pattern,make,_ in RULES:
-        match=pattern.search(cause)
-        if match: return Fix(fix_id(key),make(match,key[0]),'rule')
-    return None
+    rule,match=matching(key)
+    return Fix(fix_id(key),rule.line(match,key[0]),'rule') if rule else None
 
 
 def category(key):
-    return next((name for name,pattern,_,_ in RULES if pattern.search(key[1])),'other')
+    rule,_=matching(key)
+    return rule.name if rule else 'other'
+
+
+def fact(key):
+    """The machine fact behind a rule-based mistake, or None when no rule covers it."""
+    rule,match=matching(key)
+    return rule.fact(match,key[0]) if rule else None
 
 
 def exposure(key,tools=None):
     """Which steps attempted the action behind a mistake, whether or not they failed.
     A fix is judged only on sessions that tried the action; otherwise a change of task looks like a cure.
     Without a rule, an attempt is a call to the same tool that failed (`tools`), or else a step that names the cause."""
-    for _,pattern,_,expose in RULES:
-        match=pattern.search(key[1])
-        if match: return expose(match,key[0])
+    rule,match=matching(key)
+    if rule: return rule.attempt(match,key[0])
     if tools: return lambda step:step.tool in tools
     names=anchors(key[1])
     return lambda step:step.kind==key[0] and any(name in step.target.lower() for name in names)

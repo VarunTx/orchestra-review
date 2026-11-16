@@ -3,7 +3,7 @@ Output docs/demo.gif
 Set Shell bash
 Set FontSize 14
 Set Width 1640
-Set Height 520
+Set Height 600
 Set Padding 24
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
@@ -12,7 +12,7 @@ Type "export PS1='$ ' PATH=$PWD/.venv/bin:$PATH && clear"
 Enter
 Show
 Sleep 600ms
-Type "orchestra-review --public --top 5"
+Type "orchestra-review --public --top 6"
 Sleep 400ms
 Enter
 Sleep 7s

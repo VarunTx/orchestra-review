@@ -2,6 +2,8 @@
 from collections import defaultdict
 import re
 
+# Test runs that fail are the agent checking its work, not a mistake: reproduce scripts fail on purpose.
+TEST_OUTCOME=re.compile(r'^(?:AssertionError\b.*|FAILED \(.*|=* ?# failed\b.*|.*\btests? failed\b.*|.*Issue reproduced.*|KeyboardInterrupt|Ran # tests? in .*|# deselected in .*|E +.*)$',re.I)
 VOLATILE=re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+',re.I)
 
 
@@ -11,6 +13,8 @@ def signature(step):
     last=next((line.strip() for line in reversed((step.error or '').splitlines()) if line.strip()),'')
     last=re.sub(r'={2,}','==',VOLATILE.sub('#',last.lstrip('…')))[:160]
     if len(last)<12 or re.fullmatch(r'Exit(ed with)? code #',last): return None  # says nothing about the cause
+    if re.fullmatch(r'[~/]\S*',last): return None  # a bare path is output that happened to come last, not a cause
+    if TEST_OUTCOME.match(last): return None
     return (step.kind,last)
 
 

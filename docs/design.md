@@ -92,3 +92,13 @@ Wasted steps are the union of blind retries and unchanged repeats. Claude Code c
 - A view in the dashboard.
 - Before-and-after measurement: add a suggested instruction, then compare waste in later sessions.
 - A README rewrite and the LinkedIn post, written once there are real numbers.
+
+## 0.2.0: sync, live blocking and Codex (2026-11-16)
+
+- **State:** `~/.orchestra-review/state.json` records each line orchestra-review wrote: its cause, its machine fact, its file and how it was added. It also records lines that were undone or removed by hand, which are never re-added, and lines that were retired. Instruction files remain the source of truth for what the agent reads.
+- **Facts:** each rule may name a fact that can be re-checked: a program is missing from PATH, a module can't be imported by the default `python3`, the shell is zsh. `sync` retires a line whose fact is false. The hook blocks only when the fact is confirmed true at that moment. Rules without a checkable fact (the mined ones) are never used to block.
+- **Scope:** a mistake seen in a single project goes into that project's existing instruction file. A cross-project mistake goes to each affected agent's global file (`~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md`, `~/.codex/AGENTS.md`). Found in testing: auto-apply first created a `CLAUDE.md` in a project that had none, so `sync` now never creates files inside projects.
+- **Hooks:** PreToolUse (Bash and Read) returns a `deny` decision with the fix as the reason, and the SessionEnd hook runs `sync`. Both swallow every error, so a broken hook never stops the agent.
+- **Codex:** current Codex logs shell work as `custom_tool_call` `exec` scripts calling `tools.exec_command({cmd})`, with JSON chunks carrying `exit_code`. Parallel calls arrive wrapped as `{i, status, value}`. A truncated chunk gives no cause rather than a wrong one.
+- **Mined rules:** see `research/README.md`. Failing test runs are excluded from mistakes there and in the product.
+- **Not done:** the model drafter has not been run against a real model. The Nitro's Open WebUI needs an API key, which hasn't been provided yet.

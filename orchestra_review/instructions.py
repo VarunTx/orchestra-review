@@ -13,7 +13,8 @@ def global_files():
     """The instruction file each agent reads in every project, keyed by the session source it governs."""
     claude=Path(os.environ['CLAUDE_CONFIG_DIR']) if os.environ.get('CLAUDE_CONFIG_DIR') else Path.home()/'.claude'
     opencode=Path(os.environ.get('XDG_CONFIG_HOME') or Path.home()/'.config')/'opencode'
-    return {'claude-code':claude/'CLAUDE.md','opencode':opencode/'AGENTS.md'}
+    codex=Path(os.environ['CODEX_HOME']) if os.environ.get('CODEX_HOME') else Path.home()/'.codex'
+    return {'claude-code':claude/'CLAUDE.md','opencode':opencode/'AGENTS.md','codex':codex/'AGENTS.md'}
 
 
 def markers(path):
@@ -40,6 +41,17 @@ def apply(path,fixes,now=None):
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(text+lines,encoding='utf-8')
     return [f.id for f in new]
+
+
+def remove(path,fid):
+    """Deletes the line carrying this fix's marker. Returns whether a line was removed."""
+    path=Path(path)
+    if not path.is_file(): return False
+    lines=path.read_text(encoding='utf-8').splitlines(keepends=True)
+    kept=[line for line in lines if f'<!-- orchestra-review:{fid} ' not in line]
+    if len(kept)==len(lines): return False
+    path.write_text(''.join(kept),encoding='utf-8')
+    return True
 
 
 def governed(path,sessions):

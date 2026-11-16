@@ -1,0 +1,1098 @@
+{
+ "dataset": "nebius/SWE-rebench-openhands-trajectories",
+ "runs": 67074,
+ "steps": 4316760,
+ "failed_steps": 386869,
+ "resolved_runs": 32161,
+ "failures_with_cause": 196984,
+ "cross_repo_failures": 80187,
+ "cross_repo_causes": 2861,
+ "runs_hitting_cross_repo_mistake": 41562,
+ "resolve_rate_hit": 0.4449,
+ "resolve_rate_clean": 0.5359,
+ "rule_covered_failures": 47299,
+ "top": [
+  {
+   "tool": "read",
+   "cause": "Invalid `view_range` parameter: [#, #]. Its second element `#` should be smaller than the number of lines in the file: `#`.",
+   "runs": 21780,
+   "repos": 1509,
+   "failures": 29415,
+   "resolve_rate": 0.4228,
+   "category": "view-range-out-of-file",
+   "rule_line": "Keep `view_range` inside the file: start at line 1 or later and end at or before the last line; use -1 as the end to read to the end of the file.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "bash: syntax error near unexpected token `|'",
+   "runs": 5406,
+   "repos": 682,
+   "failures": 6273,
+   "resolve_rate": 0.3709,
+   "category": "find-exec-pipe",
+   "rule_line": "In this shell tool, `find ... -exec ... {} \\;` followed by a pipe is a syntax error; end `-exec` with `+` instead (`-exec grep -l PATTERN {} +`) or pipe `find` into `xargs`.",
+   "recovered_share": 0.9976,
+   "top_recoveries": [
+    [
+     "find",
+     5825
+    ],
+    [
+     "grep",
+     229
+    ],
+    [
+     "python",
+     130
+    ],
+    [
+     "ls",
+     64
+    ],
+    [
+     "python3",
+     3
+    ]
+   ]
+  },
+  {
+   "tool": "read",
+   "cause": "Invalid `view_range` parameter: [#, #]. Its first element `#` should be within the range of lines of the file: [#, #].",
+   "runs": 2286,
+   "repos": 429,
+   "failures": 2367,
+   "resolve_rate": 0.353,
+   "category": "view-range-out-of-file",
+   "rule_line": "Keep `view_range` inside the file: start at line 1 or later and end at or before the last line; use -1 as the end to read to the end of the file.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "SyntaxError: invalid syntax",
+   "runs": 745,
+   "repos": 317,
+   "failures": 930,
+   "resolve_rate": 0.447,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.8989,
+   "top_recoveries": [
+    [
+     "python",
+     633
+    ],
+    [
+     "python3",
+     50
+    ],
+    [
+     "grep",
+     45
+    ],
+    [
+     "git",
+     18
+    ],
+    [
+     "mv",
+     15
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "SyntaxError: f-string expression part cannot include a backslash",
+   "runs": 663,
+   "repos": 228,
+   "failures": 849,
+   "resolve_rate": 0.4103,
+   "category": "old-python-fstring",
+   "rule_line": "The Python here is older than 3.12, so an f-string expression cannot contain a backslash; compute the value in a variable before the f-string.",
+   "recovered_share": 0.9211,
+   "top_recoveries": [
+    [
+     "python",
+     722
+    ],
+    [
+     "python3",
+     26
+    ],
+    [
+     "grep",
+     12
+    ],
+    [
+     "rm",
+     8
+    ],
+    [
+     "",
+     3
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": "). No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 514,
+   "repos": 243,
+   "failures": 585,
+   "resolve_rate": 0.3735,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "IndexError: list index out of range",
+   "runs": 503,
+   "repos": 181,
+   "failures": 641,
+   "resolve_rate": 0.4294,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9204,
+   "top_recoveries": [
+    [
+     "python",
+     444
+    ],
+    [
+     "grep",
+     64
+    ],
+    [
+     "git",
+     22
+    ],
+    [
+     "python3",
+     17
+    ],
+    [
+     "echo",
+     16
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "error: invalid command 'test'",
+   "runs": 420,
+   "repos": 52,
+   "failures": 421,
+   "resolve_rate": 0.6024,
+   "category": "setup-py-test",
+   "rule_line": "`python setup.py test` does not exist in this setuptools; run the tests with `python -m pytest`.",
+   "recovered_share": 0.9691,
+   "top_recoveries": [
+    [
+     "python",
+     165
+    ],
+    [
+     "ls",
+     91
+    ],
+    [
+     "grep",
+     50
+    ],
+    [
+     "find",
+     48
+    ],
+    [
+     "pip",
+     45
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "ModuleNotFoundError: No module named 'PIL'",
+   "runs": 402,
+   "repos": 5,
+   "failures": 404,
+   "resolve_rate": 0.4279,
+   "category": "missing-python-module",
+   "rule_line": "Python module `PIL` is not importable with the default `python3` here. Use the project's virtualenv (`.venv/bin/python`) if it has one; otherwise ask before installing `PIL`.",
+   "recovered_share": 1.0,
+   "top_recoveries": [
+    [
+     "pip",
+     334
+    ],
+    [
+     "ls",
+     34
+    ],
+    [
+     "python",
+     20
+    ],
+    [
+     "python3",
+     6
+    ],
+    [
+     "make",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "grep: tests/: Is a directory",
+   "runs": 398,
+   "repos": 200,
+   "failures": 406,
+   "resolve_rate": 0.5226,
+   "category": "grep-directory",
+   "rule_line": "`grep` on a directory fails without `-r`; use `grep -rn PATTERN DIR`.",
+   "recovered_share": 0.9039,
+   "top_recoveries": [
+    [
+     "grep",
+     269
+    ],
+    [
+     "python",
+     58
+    ],
+    [
+     "find",
+     26
+    ],
+    [
+     "git",
+     9
+    ],
+    [
+     "python3",
+     3
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": "Invalid `path` parameter: /workspace/<repo> File already exists at: /workspace/<repo> Cannot overwrite files using command `create`.",
+   "runs": 364,
+   "repos": 164,
+   "failures": 364,
+   "resolve_rate": 0.4313,
+   "category": "create-existing-file",
+   "rule_line": "Don't use `create` on a file that already exists; edit it with `str_replace`, or choose a new file name.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "ModuleNotFoundError: No module named 'sqlfluff'",
+   "runs": 342,
+   "repos": 2,
+   "failures": 343,
+   "resolve_rate": 0.3977,
+   "category": "missing-python-module",
+   "rule_line": "Python module `sqlfluff` is not importable with the default `python3` here. Use the project's virtualenv (`.venv/bin/python`) if it has one; otherwise ask before installing `sqlfluff`.",
+   "recovered_share": 1.0,
+   "top_recoveries": [
+    [
+     "pip",
+     339
+    ],
+    [
+     "python",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "TypeError: __init__() got an unexpected keyword argument 'capture_output'",
+   "runs": 340,
+   "repos": 76,
+   "failures": 358,
+   "resolve_rate": 0.3618,
+   "category": "old-python-capture-output",
+   "rule_line": "The Python here is older than 3.7: `subprocess.run` has no `capture_output`; pass `stdout=subprocess.PIPE, stderr=subprocess.PIPE` instead.",
+   "recovered_share": 0.8631,
+   "top_recoveries": [
+    [
+     "python",
+     278
+    ],
+    [
+     "grep",
+     7
+    ],
+    [
+     "rm",
+     6
+    ],
+    [
+     "pip",
+     5
+    ],
+    [
+     "export",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "AttributeError: can't set attribute",
+   "runs": 339,
+   "repos": 105,
+   "failures": 441,
+   "resolve_rate": 0.3864,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.8866,
+   "top_recoveries": [
+    [
+     "python",
+     198
+    ],
+    [
+     "grep",
+     150
+    ],
+    [
+     "python3",
+     12
+    ],
+    [
+     "find",
+     9
+    ],
+    [
+     "export",
+     7
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "pytest.PytestConfigWarning: could not load initial conftests: /workspace/<repo>/tests/conftest.py",
+   "runs": 325,
+   "repos": 12,
+   "failures": 325,
+   "resolve_rate": 0.3908,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9969,
+   "top_recoveries": [
+    [
+     "pip",
+     311
+    ],
+    [
+     "python",
+     12
+    ],
+    [
+     "ls",
+     1
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "ModuleNotFoundError: No module named 'numpy'",
+   "runs": 281,
+   "repos": 16,
+   "failures": 292,
+   "resolve_rate": 0.3559,
+   "category": "missing-python-module",
+   "rule_line": "Python module `numpy` is not importable with the default `python3` here. Use the project's virtualenv (`.venv/bin/python`) if it has one; otherwise ask before installing `numpy`.",
+   "recovered_share": 0.9486,
+   "top_recoveries": [
+    [
+     "python",
+     148
+    ],
+    [
+     "pip",
+     124
+    ],
+    [
+     "python3",
+     4
+    ],
+    [
+     "grep",
+     1
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": "return False. No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 261,
+   "repos": 179,
+   "failures": 279,
+   "resolve_rate": 0.4061,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "# deselected",
+   "runs": 238,
+   "repos": 19,
+   "failures": 317,
+   "resolve_rate": 0.3025,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9306,
+   "top_recoveries": [
+    [
+     "python",
+     195
+    ],
+    [
+     "grep",
+     36
+    ],
+    [
+     "find",
+     28
+    ],
+    [
+     "rm",
+     17
+    ],
+    [
+     "git",
+     11
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "SyntaxError: EOL while scanning string literal",
+   "runs": 219,
+   "repos": 118,
+   "failures": 270,
+   "resolve_rate": 0.4795,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9519,
+   "top_recoveries": [
+    [
+     "python",
+     198
+    ],
+    [
+     "python3",
+     39
+    ],
+    [
+     "grep",
+     5
+    ],
+    [
+     "rm",
+     4
+    ],
+    [
+     "export",
+     3
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "ImportError: attempted relative import with no known parent package",
+   "runs": 207,
+   "repos": 82,
+   "failures": 221,
+   "resolve_rate": 0.4734,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9321,
+   "top_recoveries": [
+    [
+     "python",
+     169
+    ],
+    [
+     "grep",
+     11
+    ],
+    [
+     "rm",
+     4
+    ],
+    [
+     "pip",
+     4
+    ],
+    [
+     "python3",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "bash: cd: /workspace/<repo> No such file or directory",
+   "runs": 205,
+   "repos": 88,
+   "failures": 222,
+   "resolve_rate": 0.3366,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9865,
+   "top_recoveries": [
+    [
+     "python",
+     119
+    ],
+    [
+     "grep",
+     42
+    ],
+    [
+     "git",
+     17
+    ],
+    [
+     "find",
+     13
+    ],
+    [
+     "pwd",
+     6
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": ")` in lines [#, #]. Please ensure it is unique.",
+   "runs": 194,
+   "repos": 62,
+   "failures": 253,
+   "resolve_rate": 0.3711,
+   "category": "edit-not-unique",
+   "rule_line": "When an edit's `old_str` matches more than once, include enough surrounding lines to make it unique.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "make: *** [Makefile:#: test] Error #",
+   "runs": 189,
+   "repos": 36,
+   "failures": 216,
+   "resolve_rate": 0.5185,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9722,
+   "top_recoveries": [
+    [
+     "python",
+     79
+    ],
+    [
+     "pip",
+     65
+    ],
+    [
+     "grep",
+     26
+    ],
+    [
+     "find",
+     18
+    ],
+    [
+     "ls",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "https://docs.pytest.org/en/stable/deprecations.html#calling-fixtures-directly about how to update your code.",
+   "runs": 183,
+   "repos": 75,
+   "failures": 207,
+   "resolve_rate": 0.4645,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9082,
+   "top_recoveries": [
+    [
+     "python",
+     170
+    ],
+    [
+     "grep",
+     12
+    ],
+    [
+     "find",
+     4
+    ],
+    [
+     "git",
+     2
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "# error in #.#s",
+   "runs": 179,
+   "repos": 95,
+   "failures": 188,
+   "resolve_rate": 0.5028,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9681,
+   "top_recoveries": [
+    [
+     "python",
+     133
+    ],
+    [
+     "find",
+     19
+    ],
+    [
+     "pip",
+     13
+    ],
+    [
+     "rm",
+     9
+    ],
+    [
+     "git",
+     2
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "ValueError: too many values to unpack (expected #)",
+   "runs": 172,
+   "repos": 92,
+   "failures": 211,
+   "resolve_rate": 0.3547,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9526,
+   "top_recoveries": [
+    [
+     "python",
+     158
+    ],
+    [
+     "nosetests",
+     20
+    ],
+    [
+     "grep",
+     6
+    ],
+    [
+     "python3",
+     5
+    ],
+    [
+     "git",
+     5
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "AttributeError: 'Distribution' object has no attribute 'tests_require'",
+   "runs": 169,
+   "repos": 12,
+   "failures": 169,
+   "resolve_rate": 0.3846,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 1.0,
+   "top_recoveries": [
+    [
+     "python",
+     140
+    ],
+    [
+     "pip",
+     13
+    ],
+    [
+     "grep",
+     6
+    ],
+    [
+     "find",
+     5
+    ],
+    [
+     "ls",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "(no match in any of [<Module test_core.py>])",
+   "runs": 162,
+   "repos": 27,
+   "failures": 188,
+   "resolve_rate": 0.5185,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9894,
+   "top_recoveries": [
+    [
+     "python",
+     141
+    ],
+    [
+     "grep",
+     33
+    ],
+    [
+     "find",
+     5
+    ],
+    [
+     "git",
+     2
+    ],
+    [
+     "python3",
+     2
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "ValueError: not enough values to unpack (expected #, got #)",
+   "runs": 153,
+   "repos": 81,
+   "failures": 183,
+   "resolve_rate": 0.4967,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9399,
+   "top_recoveries": [
+    [
+     "python",
+     142
+    ],
+    [
+     "grep",
+     13
+    ],
+    [
+     "python3",
+     6
+    ],
+    [
+     "git",
+     5
+    ],
+    [
+     "find",
+     3
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "TypeError: 'NoneType' object is not subscriptable",
+   "runs": 151,
+   "repos": 56,
+   "failures": 178,
+   "resolve_rate": 0.5099,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.8483,
+   "top_recoveries": [
+    [
+     "python",
+     117
+    ],
+    [
+     "grep",
+     23
+    ],
+    [
+     "head",
+     4
+    ],
+    [
+     "git",
+     3
+    ],
+    [
+     "python3",
+     2
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "make: *** [Makefile:#: unit] Error #",
+   "runs": 148,
+   "repos": 3,
+   "failures": 151,
+   "resolve_rate": 0.3919,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9735,
+   "top_recoveries": [
+    [
+     "python",
+     82
+    ],
+    [
+     "grep",
+     34
+    ],
+    [
+     "python3",
+     15
+    ],
+    [
+     "find",
+     14
+    ],
+    [
+     "rm",
+     1
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": "}. No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 147,
+   "repos": 95,
+   "failures": 155,
+   "resolve_rate": 0.3197,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "hint: See above for details.",
+   "runs": 146,
+   "repos": 13,
+   "failures": 205,
+   "resolve_rate": 0.2055,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9902,
+   "top_recoveries": [
+    [
+     "python",
+     86
+    ],
+    [
+     "pip",
+     60
+    ],
+    [
+     "ls",
+     19
+    ],
+    [
+     "rm",
+     9
+    ],
+    [
+     "grep",
+     8
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "rootdir: /workspace/<repo>",
+   "runs": 145,
+   "repos": 58,
+   "failures": 172,
+   "resolve_rate": 0.2897,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9302,
+   "top_recoveries": [
+    [
+     "python",
+     78
+    ],
+    [
+     "pip",
+     46
+    ],
+    [
+     "find",
+     10
+    ],
+    [
+     "grep",
+     9
+    ],
+    [
+     "python3",
+     4
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "# passed in #.#s",
+   "runs": 137,
+   "repos": 15,
+   "failures": 171,
+   "resolve_rate": 0.5839,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.731,
+   "top_recoveries": [
+    [
+     "python",
+     60
+    ],
+    [
+     "rm",
+     46
+    ],
+    [
+     "git",
+     12
+    ],
+    [
+     "find",
+     4
+    ],
+    [
+     "grep",
+     2
+    ]
+   ]
+  },
+  {
+   "tool": "edit",
+   "cause": "\"\"\". No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 129,
+   "repos": 82,
+   "failures": 141,
+   "resolve_rate": 0.4186,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "edit",
+   "cause": "]. No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 124,
+   "repos": 99,
+   "failures": 135,
+   "resolve_rate": 0.5,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "read",
+   "cause": "Invalid `view_range` parameter: [#, -#]. Its first element `#` should be within the range of lines of the file: [#, #].",
+   "runs": 124,
+   "repos": 88,
+   "failures": 127,
+   "resolve_rate": 0.2984,
+   "category": "view-range-out-of-file",
+   "rule_line": "Keep `view_range` inside the file: start at line 1 or later and end at or before the last line; use -1 as the end to read to the end of the file.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "shell",
+   "cause": "NameError: name '__file__' is not defined",
+   "runs": 119,
+   "repos": 83,
+   "failures": 130,
+   "resolve_rate": 0.4622,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9846,
+   "top_recoveries": [
+    [
+     "python",
+     115
+    ],
+    [
+     "python3",
+     10
+    ],
+    [
+     "echo",
+     1
+    ],
+    [
+     "grep",
+     1
+    ],
+    [
+     "rm",
+     1
+    ]
+   ]
+  },
+  {
+   "tool": "shell",
+   "cause": "\u2717 Failed to reproduce the issue",
+   "runs": 112,
+   "repos": 77,
+   "failures": 169,
+   "resolve_rate": 0.3839,
+   "category": "other",
+   "rule_line": null,
+   "recovered_share": 0.9053,
+   "top_recoveries": [
+    [
+     "python",
+     132
+    ],
+    [
+     "grep",
+     5
+    ],
+    [
+     "echo",
+     3
+    ],
+    [
+     "pip",
+     3
+    ],
+    [
+     "git",
+     3
+    ]
+   ]
+  }
+ ]
+}
