@@ -47,7 +47,6 @@ def output_text(content):
 def parse(export):
     info=export.get('info') or {}
     s=Session(source='opencode',id=str(info.get('id','')),title=info.get('title'))
-    costs=[]
     for message in export.get('messages') or []:
         if not isinstance(message,dict): s.skipped_lines+=1;continue
         times=message.get('time') or {}
@@ -56,12 +55,6 @@ def parse(export):
         if message.get('type')!='assistant': continue
         model=message.get('model') or {}
         s.model(model.get('id') if isinstance(model,dict) else model)
-        tokens=message.get('tokens')
-        if isinstance(tokens,dict):
-            cache=tokens.get('cache') or {}
-            s.usage.add(input=tokens.get('input'),output=tokens.get('output'),reasoning=tokens.get('reasoning'),
-                        cache_read=cache.get('read'),cache_write=cache.get('write'))
-        if isinstance(message.get('cost'),(int,float)): costs.append(message['cost'])
         for part in message.get('content') or []:
             if not isinstance(part,dict) or part.get('type')!='tool': continue
             state=part.get('state') or {};meta=state.get('metadata') or {}
@@ -75,6 +68,4 @@ def parse(export):
                       ok=ok,exit_code=code,digest=digest(text),at=ms_time((part.get('time') or {}).get('created')))
             if ok is False: step.error=tail(text) or (str(state['error'])[:240] if state.get('error') else None)
             s.steps.append(step)
-    if isinstance(info.get('cost'),(int,float)): s.cost_usd=float(info['cost'])
-    elif costs: s.cost_usd=float(sum(costs))
     return s

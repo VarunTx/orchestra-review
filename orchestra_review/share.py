@@ -7,7 +7,7 @@ from datetime import datetime,timezone
 import json
 import re
 
-from .detectors import recurring,review,wasted
+from .detectors import recurring
 from .fixes import category,exposure
 from .redact import redact
 
@@ -28,7 +28,6 @@ def scrub(text):
 
 
 def summary(sessions):
-    findings=[f for s in sessions for f in review(s)]
     steps=sum(len(s.steps) for s in sessions)
     failed=sum(1 for s in sessions for x in s.steps if x.ok is False)
     repeats=recurring(sessions)
@@ -46,7 +45,6 @@ def summary(sessions):
             'models':sorted({m for s in sessions for m in s.models}),
             'sessions':len(sessions),'steps':steps,'failed_steps':failed,
             'blocked_steps':sum(1 for s in sessions for x in s.steps if x.blocked),
-            'wasted_steps':len(wasted(findings)),
             'recurring_failed_steps':sum(c['failed_steps'] for c in causes),
             'causes':causes}
 

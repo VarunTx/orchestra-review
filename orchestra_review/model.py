@@ -23,20 +23,6 @@ class Step:
 
 
 @dataclass
-class Usage:
-    input:int=0
-    output:int=0
-    reasoning:int=0
-    cache_read:int=0
-    cache_write:int=0
-    known:bool=False
-
-    def add(self,input=0,output=0,reasoning=0,cache_read=0,cache_write=0):
-        self.input+=input or 0;self.output+=output or 0;self.reasoning+=reasoning or 0
-        self.cache_read+=cache_read or 0;self.cache_write+=cache_write or 0;self.known=True
-
-
-@dataclass
 class Session:
     source:str
     id:str
@@ -46,8 +32,6 @@ class Session:
     ended:datetime|None=None
     models:list[str]=field(default_factory=list)
     steps:list[Step]=field(default_factory=list)
-    usage:Usage=field(default_factory=Usage)
-    cost_usd:float|None=None  # only what the source recorded; never estimated
     prompts:int=0
     skipped_lines:int=0
 

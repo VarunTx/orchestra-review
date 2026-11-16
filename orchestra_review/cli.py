@@ -63,8 +63,9 @@ def main(argv=None):
     parser.add_argument('--instructions',action='append',default=[],help='extra instruction file to measure fixes in; repeatable')
     parser.add_argument('--top',type=int,default=10)
     parser.add_argument('--json',action='store_true',help='print the full result as JSON')
+    parser.add_argument('--public',action='store_true',help='scrub paths, file names, URLs and emails from the output, for screenshots')
     args=parser.parse_args(argv)
-    data=build(collect(args),top=args.top,model=args.model,model_url=args.model_url,instruction_files=args.instructions)
+    data=build(collect(args),top=args.top,model=args.model,model_url=args.model_url,instruction_files=args.instructions,public=args.public)
     print(json.dumps(data,indent=2) if args.json else render(data))
     return 0
 

@@ -1,1 +1,1 @@
-"""Local review of coding-agent sessions: wasted steps, with evidence."""
+"""Finds the mistakes your coding agent repeats across sessions, from local logs."""

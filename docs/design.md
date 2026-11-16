@@ -2,6 +2,9 @@
 
 Design notes. Development started on 2026-11-13 in the `review/` folder of [orchestra-ai](https://github.com/VarunTx/orchestra-ai), and moved to this repository on 2026-11-15.
 
+
+**Changed on 2026-11-15 (0.1.0):** in-session waste rules (blind retries, unchanged repeats, failure streaks) and token and cost totals were removed. They found nothing in the author's data and are not the product's job. Sections below that describe them are kept as history.
+
 ## Problem
 
 **Coding agents start every session with no memory of the machine they run on, so they keep making the same mistakes.** They call a program that isn't installed, use the wrong Python, or trip over a shell quirk. Each failure is cheap on its own, but the agent repeats it in the next session, and the one after. Nobody notices, because the evidence is spread across transcripts thousands of lines long.
