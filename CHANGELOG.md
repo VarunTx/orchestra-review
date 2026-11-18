@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-11-17
 
 - The hook no longer blocks imports of modules seen missing earlier. Replaying 67,074 public runs (`research/hook_replay.py`) showed such blocks would mostly have stopped imports that then worked, because importability depends on the working directory and virtualenv. Module mistakes still get an instruction line.
 - The hook never blocks a command that installs software or changes PATH itself (`export PATH=...`, `pip install ... &&`, `source .venv/bin/activate`, `npx`, `uv run`). It also ignores program names that appear only inside quoted code.
