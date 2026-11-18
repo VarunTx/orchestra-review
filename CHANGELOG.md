@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.2 — unreleased
+## 0.2.2 — 2026-11-17
 
 Found while setting it up on a real machine:
 - One fix can now live in several files, one per agent. Before, a line already in `~/.claude/CLAUDE.md` stopped `sync` from adding it to Codex's `AGENTS.md`, even when Codex kept making the mistake. State written by 0.2.0 and 0.2.1 is read and upgraded.
