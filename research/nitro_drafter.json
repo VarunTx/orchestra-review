@@ -1,0 +1,145 @@
+{
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "host": "Nitro (GTX 1650, Ollama over Tailscale)",
+ "first_prompt": {
+  "model": "qwen3:4b-instruct-2507-q4_K_M",
+  "host": "Nitro (GTX 1650, Ollama over Tailscale)",
+  "cold_load_seconds": 6.6,
+  "accepted": 10,
+  "all_under_30s": true,
+  "rows": [
+   {
+    "cause": "This tab shows a local file, not a web page; page tools can't act on it here. Open web pages in a new tab (`ta",
+    "seconds": 3.0,
+    "accepted": true,
+    "line": "When encountering a local file tab, do not use screenshot; instead, open the web page in a new tab using tabs_create followed by navigate.",
+    "reason": null
+   },
+   {
+    "cause": "usage: mark_artifact_operation_started.mjs --operation-kind <create|edit> --expected-output-count <#-#> --outp",
+    "seconds": 4.1,
+    "accepted": true,
+    "line": "Fix the mark_artifact_operation_started.mjs script to accept --output-format instead of --output-for and validate expected-output-count as a number.",
+    "reason": null
+   },
+   {
+    "cause": "Claude Code is unable to fetch from www.reddit.com",
+    "seconds": 2.2,
+    "accepted": true,
+    "line": "Claude Code must skip fetching from www.reddit.com and use alternative data sources instead.",
+    "reason": null
+   },
+   {
+    "cause": "actions[#] (resize_window) failed: This tab shows a local file, not a web page; page tools can't act on it her",
+    "seconds": 3.8,
+    "accepted": true,
+    "line": "Do not use resize_window on local file tabs; instead, navigate to web pages using tabs_create.",
+    "reason": null
+   },
+   {
+    "cause": "connect ECONNREFUSED #.#.#.#:#",
+    "seconds": 2.1,
+    "accepted": true,
+    "line": "Stop using web tool with invalid URLs; instead, validate URLs before attempting to connect.",
+    "reason": null
+   },
+   {
+    "cause": "SyntaxError: invalid syntax",
+    "seconds": 1.7,
+    "accepted": true,
+    "line": "Stop using shell with invalid syntax; switch to Python for code execution instead.",
+    "reason": null
+   },
+   {
+    "cause": "IndexError: list index out of range",
+    "seconds": 1.9,
+    "accepted": true,
+    "line": "Fix the shell tool to validate list indices before access instead of assuming list is non-empty.",
+    "reason": null
+   },
+   {
+    "cause": "AttributeError: can't set attribute",
+    "seconds": 2.3,
+    "accepted": true,
+    "line": "Do not attempt to modify attributes of shell objects; instead, reassign the object or use built-in commands to update state.",
+    "reason": null
+   },
+   {
+    "cause": "pytest.PytestConfigWarning: could not load initial conftests: /workspace/<repo>/tests/conftest.py",
+    "seconds": 2.2,
+    "accepted": true,
+    "line": "Fix the pytest conftest loading issue by ensuring tests/conftest.py is valid and properly structured.",
+    "reason": null
+   },
+   {
+    "cause": "# deselected",
+    "seconds": 2.4,
+    "accepted": true,
+    "line": "Stop using \"deselected\" in shell sessions; instead, verify and explicitly select intended options.",
+    "reason": null
+   }
+  ]
+ },
+ "second_prompt": [
+  {
+   "cause": "This tab shows a local file, not a web page; page tools can't act on it here. Open web pages in a new tab (`ta",
+   "seconds": 4.1,
+   "line": "Before taking a screenshot, ensure the tab is a web page by using `tabs_create` then `navigate` to open a valid URL instead of a local file.",
+   "note": null
+  },
+  {
+   "cause": "usage: mark_artifact_operation_started.mjs --operation-kind <create|edit> --expected-output-count <#-#> --outp",
+   "seconds": 3.9,
+   "line": "Ensure the mark_artifact_operation_started.mjs tool accepts --output-format <format> and validate input format in all calls.",
+   "note": null
+  },
+  {
+   "cause": "Claude Code is unable to fetch from www.reddit.com",
+   "seconds": 2.5,
+   "line": null,
+   "note": "line does not name the cause"
+  },
+  {
+   "cause": "actions[#] (resize_window) failed: This tab shows a local file, not a web page; page tools can't act on it her",
+   "seconds": 5.3,
+   "line": "When a tab contains a local file URL, do not use resize_window or navigate actions; instead, open the file in a web browser via a valid web URL or use a tool that handles file paths correctly.",
+   "note": null
+  },
+  {
+   "cause": "connect ECONNREFUSED #.#.#.#:#",
+   "seconds": 3.4,
+   "line": null,
+   "note": "line does not name the cause"
+  },
+  {
+   "cause": "SyntaxError: invalid syntax",
+   "seconds": 1.7,
+   "line": "Ensure the shell script uses valid Python syntax before execution to avoid SyntaxError.",
+   "note": null
+  },
+  {
+   "cause": "IndexError: list index out of range",
+   "seconds": 1.9,
+   "line": "When using the shell, always verify that a list is not empty before accessing its elements.",
+   "note": null
+  },
+  {
+   "cause": "AttributeError: can't set attribute",
+   "seconds": 1.8,
+   "line": "Avoid setting attributes on shell objects; use shell commands instead of direct attribute assignment.",
+   "note": null
+  },
+  {
+   "cause": "pytest.PytestConfigWarning: could not load initial conftests: /workspace/<repo>/tests/conftest.py",
+   "seconds": 2.4,
+   "line": "Ensure pytest can access /workspace/<repo>/tests/conftest.py by verifying file existence and permissions before running tests.",
+   "note": null
+  },
+  {
+   "cause": "# deselected",
+   "seconds": 2.6,
+   "line": null,
+   "note": "line does not name the cause"
+  }
+ ]
+}

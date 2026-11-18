@@ -158,3 +158,35 @@ def test_hook_never_blocks_module_imports_path_changes_or_quoted_text(isolated):
                     'python3 -c "print(1); jq(2)"','npx jq . a']:
         assert call('Bash',{'command':command}) is None,command
     assert call('Bash',{'command':'cd x && jq . a'}) is not None
+
+
+def test_one_fix_can_live_in_each_agents_file(isolated):
+    claude=isolated/'claude'/'CLAUDE.md';claude.parent.mkdir(parents=True)
+    claude.write_text(f'- old <!-- orchestra-review:{fix_id(MISSING)} 2026-11-13T17:58Z -->\n')
+    codex=[failing(f'x{i}','x\n(eval):1: command not found: jq',source='codex',project=f'/w/{i}') for i in range(3)]
+    changes=sync(jq_sessions(3)+codex)
+    assert changes==[('added',fix_id(MISSING),str(isolated/'codex'/'AGENTS.md'),changes[0][3])]
+    entry=st.load()['fixes'][fix_id(MISSING)]
+    assert entry['files']==[str(claude),str(isolated/'codex'/'AGENTS.md')]
+    claude.write_text('# mine\n')  # removed by hand from one file only
+    assert [c[0] for c in sync(jq_sessions(3)+codex)]==['removed by hand']
+    assert markers(claude)==[] and [f for f,_ in markers(isolated/'codex'/'AGENTS.md')]==[fix_id(MISSING)]
+    assert sync(jq_sessions(4)+codex)==[]  # not re-added to Claude's file
+
+
+def test_reads_state_written_by_0_2_0(isolated):
+    claude=isolated/'claude'/'CLAUDE.md';claude.parent.mkdir(parents=True)
+    claude.write_text(f'- l <!-- orchestra-review:{fix_id(MISSING)} 2026-11-13T17:58Z -->\n')
+    old=st.empty();old['fixes'][fix_id(MISSING)]={'line':'l','key':list(MISSING),'fact':{'type':'program-missing','name':'jq','via':'shell'},
+                                                  'file':str(claude),'applied':'2026-11-13T17:58Z','how':'manual'}
+    st.save(old)
+    assert sync(jq_sessions(3))==[]
+    assert st.load()['fixes'][fix_id(MISSING)]['files']==[str(claude)]
+
+
+def test_no_project_copy_when_a_global_file_already_has_the_line(isolated):
+    claude=isolated/'claude'/'CLAUDE.md';claude.parent.mkdir(parents=True)
+    claude.write_text(f'- l <!-- orchestra-review:{fix_id(MISSING)} 2026-11-13T17:58Z -->\n')
+    (isolated/'repo').mkdir();(isolated/'repo'/'CLAUDE.md').write_text('# project\n')
+    assert sync(jq_sessions(3,projects=(str(isolated/'repo'),)))==[]
+    assert markers(isolated/'repo'/'CLAUDE.md')==[]

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.2 — unreleased
+
+Found while setting it up on a real machine:
+- One fix can now live in several files, one per agent. Before, a line already in `~/.claude/CLAUDE.md` stopped `sync` from adding it to Codex's `AGENTS.md`, even when Codex kept making the mistake. State written by 0.2.0 and 0.2.1 is read and upgraded.
+- Removing a line by hand from one file stops it being re-added anywhere, but leaves copies in other files alone.
+- `sync` no longer copies a line into a project's instruction file when the agent's global file already carries it.
+
+Found by testing the model drafter on a real local model (Qwen3 4B on a GTX 1650, `research/nitro_drafter.json`):
+- Generic exceptions (`SyntaxError`, `IndexError`, `AttributeError` and the like) are treated as code bugs and never sent to the model. It wrote confident nonsense for them.
+- The model may now answer `{"line": null}` to decline.
+- A bare `# deselected` pytest summary is no longer treated as a mistake.
+
 ## 0.2.1 — 2026-11-17
 
 - The hook no longer blocks imports of modules seen missing earlier. Replaying 67,074 public runs (`research/hook_replay.py`) showed such blocks would mostly have stopped imports that then worked, because importability depends on the working directory and virtualenv. Module mistakes still get an instruction line.

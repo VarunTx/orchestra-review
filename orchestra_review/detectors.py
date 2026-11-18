@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 
 # Test runs that fail are the agent checking its work, not a mistake: reproduce scripts fail on purpose.
-TEST_OUTCOME=re.compile(r'^(?:AssertionError\b.*|FAILED \(.*|=* ?# failed\b.*|.*\btests? failed\b.*|.*Issue reproduced.*|KeyboardInterrupt|Ran # tests? in .*|# deselected in .*|E +.*)$',re.I)
+TEST_OUTCOME=re.compile(r'^(?:AssertionError\b.*|FAILED \(.*|=* ?# failed\b.*|.*\btests? failed\b.*|.*Issue reproduced.*|KeyboardInterrupt|Ran # tests? in .*|# deselected\b.*|E +.*)$',re.I)
 VOLATILE=re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+',re.I)
 
 

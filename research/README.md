@@ -46,6 +46,20 @@ In the first two rows the agent hit the same wall 1.2 to 1.4 times per affected 
 
 **What this says.** In throwaway containers where agents install whatever is missing, a repeated program-missing failure is rare and blocking adds little. The hook is for machines where a tool stays missing for weeks, such as the author's Mac, where `pdftoppm` failed in 8 of 9 sessions that read a PDF. Its precision there is not yet measured.
 
+## Drafting lines with a small local model
+
+When no rule covers a mistake, Orchestra Review can ask a local model to draft the line. The gate set before testing was: at most 30 seconds per draft, and at least 8 of 10 drafts passing the grounding and safety checks. [`nitro_drafter.json`](nitro_drafter.json) has the run: Qwen3 4B Instruct (Q4) on a GTX 1650 laptop, reached through Ollama over Tailscale, on 10 real causes with no rule (5 from the author's logs, 5 from the public runs).
+
+- **Speed passed easily:** 1.7 to 5.3 seconds per draft, and 6.6 seconds including a cold model load.
+- **The checks passed, but the lines were weak.** With the first prompt, all 10 drafts passed. By the author's reading, about 3 were useful: two about browser tabs that show a local file, and one about pytest conftests. The rest were confident advice for ordinary code bugs, such as "Stop using shell with invalid syntax; switch to Python".
+- **Asking the model to decline didn't work.** A stricter prompt told it to answer `null` for code bugs. It never did, though three drafts then failed the checks and were dropped.
+
+So passing the checks does not mean the advice is good, and the gate as set was too weak to catch it. Two changes followed:
+- Generic exceptions (`SyntaxError`, `IndexError`, `AttributeError` and the like) are never sent to the model.
+- Drafted lines stay suggestions, never added automatically.
+
+The usefulness judgments come from the author's reading, not from blind labels.
+
 ## Method and limits
 
 - **Failures:** a shell call failed when OpenHands reports a non-zero exit code. An editor call failed when its observation starts with `ERROR`. Calls with no recorded outcome (timeouts) are left out.

@@ -204,3 +204,19 @@ def test_test_failures_are_not_mistakes():
                  'Ran 4 tests in 0.01s','Issue reproduced successfully!','E   assert 1 == 2']:
         assert signature(Step(index=1,tool='Bash',kind='shell',target='pytest',ok=False,error='x\n'+last)) is None,last
     assert signature(Step(index=1,tool='Bash',kind='shell',target='x',ok=False,error='zsh: command not found: jq'))
+
+
+def test_code_bugs_are_never_sent_to_a_model():
+    for cause in ['SyntaxError: invalid syntax','IndexError: list index out of range',"AttributeError: can't set attribute"]:
+        fix=suggest(('shell',cause),{},'any-model','http://127.0.0.1:9')
+        assert fix.line is None and fix.note.startswith('looks like a bug')
+    assert suggest(('shell',"TypeError: __init__() got an unexpected keyword argument 'capture_output'"),{}).source=='rule'
+
+
+def test_model_may_decline_with_null(tmp_path):
+    server,url=serve()
+    try:
+        Stub.reply={'line':None}
+        fix=draft(('other','Claude Code is unable to fetch from www.example.com'),[],3,'tiny',url)
+        assert fix.line is None and 'code bug' in fix.note
+    finally: server.shutdown()
