@@ -52,13 +52,13 @@ RULES=[
                        "or quote the pattern.",
          lambda m,kind:lambda step:step.kind=='shell' and re.search(r'[*?]',step.target) is not None,
          lambda m,kind:{'type':'shell-is-zsh','rule':'zsh-empty-glob'}),
-    Rule('missing-program',re.compile(r'`?([\w.+-]+)`? is not installed'),
+    Rule('missing-program',re.compile(r'`?(\w[\w.+-]*)`? is not installed'),
          lambda m,kind:(f"Reading PDFs with the Read tool fails here because `{m[1]}` is not installed; extract the text with "
                         f"an installed tool or library instead." if kind=='read' else
                         f"`{m[1]}` is not installed on this machine. Don't rely on it; use an installed alternative or ask before installing it."),
          lambda m,kind:(lambda step:step.kind=='read' and step.target.lower().split(':')[0].endswith('.pdf')) if kind=='read' else shell_mentions(m[1]),
          lambda m,kind:{'type':'program-missing','name':m[1],'via':'read-pdf' if kind=='read' else 'shell'}),
-    Rule('missing-program',re.compile(r'command not found: ([\w.+-]+)|([\w.+-]+): command not found|^([\w.+-]+) not found'),
+    Rule('missing-program',re.compile(r'command not found: (\w[\w.+-]*)|(?<![\w-])(\w[\w.+-]*): command not found|^(\w[\w.+-]*) not found'),
          lambda m,kind:f"`{program(m)}` is not installed on this machine. Don't rely on it; use an installed alternative "
                        f"or ask before installing it.",
          lambda m,kind:shell_mentions(program(m)),

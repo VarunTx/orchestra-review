@@ -83,28 +83,34 @@ def read(path):
             if not isinstance(entry,dict): s.skipped_lines+=1;continue
             at=iso_time(entry.get('timestamp'));payload=entry.get('payload')
             if not isinstance(payload,dict): continue
-            kind=entry.get('type');ptype=payload.get('type')
-            if kind=='session_meta':
-                s.project=s.project or payload.get('cwd');s.id=str(payload.get('id') or s.id)
-            elif kind=='turn_context':
-                s.model(payload.get('model'));s.project=s.project or payload.get('cwd')
-            if kind!='response_item': continue
-            s.seen(at)
-            if ptype=='message' and payload.get('role')=='user': s.prompts+=1
-            elif ptype in ('function_call','custom_tool_call'):
-                name=str(payload.get('name',''))
-                if ptype=='custom_tool_call' and name=='exec':
-                    cmds=[bytes(c,'utf-8').decode('unicode_escape') for c in CMD.findall(str(payload.get('input','')))]
-                    command=' ; '.join(' '.join(c.split()) for c in cmds) or None
-                else: command=command_of(name,payload.get('arguments')) if name in SHELL_FUNCTIONS else None
-                step=Step(index=len(s.steps)+1,tool=name,kind='shell' if command else ('edit' if name=='apply_patch' else 'other'),
-                          target=command or name,at=at)
-                s.steps.append(step);pending[payload.get('call_id')]=step
-            elif ptype in ('function_call_output','custom_tool_call_output') and payload.get('call_id') in pending:
-                step=pending.pop(payload['call_id'])
-                text=text_of(payload.get('output'))
-                step.digest=digest(text)
-                if step.kind!='shell': continue  # only shell calls report an outcome Codex records reliably
-                step.ok,step.exit_code=outcome(text)
-                if step.ok is False: step.error=error_text(text)
+            try: take(s,entry,payload,at,pending)
+            except (TypeError,AttributeError,KeyError,ValueError): s.skipped_lines+=1  # a shape this version doesn't know
     return s
+
+
+def take(s,entry,payload,at,pending):
+    """One rollout entry. Raises on shapes it does not know; read() counts those as skipped lines."""
+    kind=entry.get('type');ptype=payload.get('type')
+    if kind=='session_meta':
+        s.project=s.project or (payload.get('cwd') if isinstance(payload.get('cwd'),str) else None);s.id=str(payload.get('id') or s.id)
+    elif kind=='turn_context':
+        s.model(payload.get('model'));s.project=s.project or (payload.get('cwd') if isinstance(payload.get('cwd'),str) else None)
+    if kind!='response_item': return
+    s.seen(at)
+    if ptype=='message' and payload.get('role')=='user': s.prompts+=1
+    elif ptype in ('function_call','custom_tool_call'):
+        name=str(payload.get('name',''))
+        if ptype=='custom_tool_call' and name=='exec':
+            cmds=[bytes(c,'utf-8').decode('unicode_escape') for c in CMD.findall(str(payload.get('input','')))]
+            command=' ; '.join(' '.join(c.split()) for c in cmds) or None
+        else: command=command_of(name,payload.get('arguments')) if name in SHELL_FUNCTIONS else None
+        step=Step(index=len(s.steps)+1,tool=name,kind='shell' if command else ('edit' if name=='apply_patch' else 'other'),
+                  target=command or name,at=at)
+        s.steps.append(step);pending[payload.get('call_id')]=step
+    elif ptype in ('function_call_output','custom_tool_call_output') and payload.get('call_id') in pending:
+        step=pending.pop(payload['call_id'])
+        text=text_of(payload.get('output'))
+        step.digest=digest(text)
+        if step.kind=='shell':  # only shell calls report an outcome Codex records reliably
+            step.ok,step.exit_code=outcome(text)
+            if step.ok is False: step.error=error_text(text)

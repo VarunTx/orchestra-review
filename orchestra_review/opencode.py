@@ -45,27 +45,34 @@ def output_text(content):
 
 
 def parse(export):
-    info=export.get('info') or {}
-    s=Session(source='opencode',id=str(info.get('id','')),title=info.get('title'))
-    for message in export.get('messages') or []:
+    info=export.get('info') if isinstance(export,dict) and isinstance(export.get('info'),dict) else {}
+    s=Session(source='opencode',id=str(info.get('id','')),title=info.get('title') if isinstance(info.get('title'),str) else None)
+    messages=export.get('messages') if isinstance(export,dict) else None
+    for message in messages if isinstance(messages,list) else []:
         if not isinstance(message,dict): s.skipped_lines+=1;continue
-        times=message.get('time') or {}
-        s.seen(ms_time(times.get('created')))
-        if message.get('type')=='user': s.prompts+=1
-        if message.get('type')!='assistant': continue
-        model=message.get('model') or {}
-        s.model(model.get('id') if isinstance(model,dict) else model)
-        for part in message.get('content') or []:
-            if not isinstance(part,dict) or part.get('type')!='tool': continue
-            state=part.get('state') or {};meta=state.get('metadata') or {}
-            tool=str(part.get('name',''))
-            text=output_text(state.get('content'))
-            code=meta.get('exit') if isinstance(meta.get('exit'),int) else None
-            if state.get('status')=='error' or (code is not None and code!=0): ok=False
-            elif state.get('status')=='completed' and meta.get('status') in (None,'completed'): ok=True
-            else: ok=None
-            step=Step(index=len(s.steps)+1,tool=tool,kind=kind_of(tool),target=target_of(tool,state.get('input')),
-                      ok=ok,exit_code=code,digest=digest(text),at=ms_time((part.get('time') or {}).get('created')))
-            if ok is False: step.error=tail(text) or (str(state['error'])[:240] if state.get('error') else None)
-            s.steps.append(step)
+        try: take(s,message)
+        except (TypeError,AttributeError,KeyError,ValueError): s.skipped_lines+=1  # a shape this version doesn't know
     return s
+
+
+def take(s,message):
+    """One exported message. Raises on shapes it does not know; parse() counts those as skipped."""
+    times=message.get('time') or {}
+    s.seen(ms_time(times.get('created')))
+    if message.get('type')=='user': s.prompts+=1
+    if message.get('type')!='assistant': return
+    model=message.get('model') or {}
+    s.model(model.get('id') if isinstance(model,dict) else model)
+    for part in message.get('content') or []:
+        if not isinstance(part,dict) or part.get('type')!='tool': continue
+        state=part.get('state') or {};meta=state.get('metadata') or {}
+        tool=str(part.get('name',''))
+        text=output_text(state.get('content'))
+        code=meta.get('exit') if isinstance(meta.get('exit'),int) else None
+        if state.get('status')=='error' or (code is not None and code!=0): ok=False
+        elif state.get('status')=='completed' and meta.get('status') in (None,'completed'): ok=True
+        else: ok=None
+        step=Step(index=len(s.steps)+1,tool=tool,kind=kind_of(tool),target=target_of(tool,state.get('input')),
+                  ok=ok,exit_code=code,digest=digest(text),at=ms_time((part.get('time') or {}).get('created')))
+        if ok is False: step.error=tail(text) or (str(state['error'])[:240] if state.get('error') else None)
+        s.steps.append(step)

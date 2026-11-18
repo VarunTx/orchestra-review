@@ -12,7 +12,7 @@ Each run is treated as one session. "Recurring" here means the same mistake in *
 | Failed calls with an identifiable cause (test runs failing on purpose excluded) | 196,984 |
 | **…of which repeat a mistake seen in another repository** | **80,187 (41%)**, from 2,861 distinct causes |
 | Runs that hit at least one of those mistakes | 41,562 (62%) |
-| Of the repeated failures, covered by Orchestra Review's built-in rules | 47,299 (59%) |
+| Of the repeated failures, covered by Orchestra Review's built-in rules | 47,152 (59%) |
 
 **The top recurring mistakes were about the tools, not the code:**
 
@@ -28,9 +28,23 @@ Each run is treated as one session. "Recurring" here means the same mistake in *
 | `create` on a file that already exists | 364 | 164 | 364 |
 | `subprocess.run(capture_output=...)` on Python older than 3.7 | 340 | 76 | 358 |
 
-In the first two rows the agent hit the same wall about once per affected run, and in the second row it recovered by rewriting the `find` command in 99.8% of cases. Each of these failures has a one-line fix, and the nine mined rules now ship with Orchestra Review.
+In the first two rows the agent hit the same wall 1.2 to 1.4 times per affected run. In the `find` row it recovered by rewriting the `find` command in 99.8% of cases. Each of these failures has a one-line fix, and the nine mined rules now ship with Orchestra Review.
 
 **Runs that hit a recurring mistake resolved their issue less often: 44.5% against 53.6% for runs that didn't.** This is a correlation, not a measured effect of the mistakes. Harder issues produce longer runs, and longer runs have more chances to hit anything. Measuring the effect would mean re-running the agent with the instruction lines added, which this analysis does not do.
+
+## Replaying the blocking hook
+
+[`hook_replay.py`](hook_replay.py) runs every public run through the hook's own blocking rule. Within each run, once a call fails because a program or module is missing, every later shell call is checked with `blocks()`. The question is whether the hook would have stopped a repeat of the failure, or blocked a call that worked. Results are in [`hook_replay.json`](hook_replay.json).
+
+**The first replay changed the product.** As first built, the hook also blocked imports of modules seen missing earlier. It would have blocked 20,907 calls, and 18,223 of those then succeeded. Whether a module imports depends on the working directory, the interpreter and the virtualenv. The typical case: "No module named X" from one directory, then a working `import X` from the repository root. So:
+- Missing-module mistakes now get an instruction line, but are **never blocked**.
+- Two bugs in the program check were found and fixed:
+  - text inside quoted code (`python -c "... file(...)"`) was read as running `file`;
+  - commands that change PATH or install something in the same line (`export PATH=... && go version`) could be blocked.
+
+**After those changes**, program-missing facts produce 315 matching calls in 67,074 runs. In almost all of them the agent had installed something in between, often under a different package name: `poppler-utils` provides `pdffonts`, `netcat` provides `nc`. The live hook re-checks with `which` before blocking, so it would let those calls through. Only 10 calls would have been blocked after an approximated re-check, and that sample is too small to estimate how often a block is wrong.
+
+**What this says.** In throwaway containers where agents install whatever is missing, a repeated program-missing failure is rare and blocking adds little. The hook is for machines where a tool stays missing for weeks, such as the author's Mac, where `pdftoppm` failed in 8 of 9 sessions that read a PDF. Its precision there is not yet measured.
 
 ## Method and limits
 
@@ -40,10 +54,11 @@ In the first two rows the agent hit the same wall about once per affected run, a
 - **Generalisation:** this is one agent and one model. Two of the top mistakes, `view_range` and the `find ... \; |` parsing, are specific to OpenHands' tools. They show what the method finds, not how often Claude Code or Codex make the same mistakes.
 - **Recovery:** "recovered" means a successful shell call within the next five steps. The program it ran is counted as the recovery.
 
-Reproduce it (pyarrow is needed only for this script):
+Reproduce it (pyarrow is needed only for these scripts):
 
 ```sh
 curl -L -o trajectories.parquet https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories/resolve/main/trajectories.parquet   # 2.08 GB
 python -m venv /tmp/arrow && /tmp/arrow/bin/pip install pyarrow
 /tmp/arrow/bin/python research/swe_rebench.py trajectories.parquet --out research/results.json
+/tmp/arrow/bin/python research/hook_replay.py trajectories.parquet --out research/hook_replay.json
 ```

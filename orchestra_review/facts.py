@@ -36,8 +36,13 @@ def module_missing(name):
     return _modules[name]
 
 
+# A command that installs software or changes PATH may make the program available itself, so it is never blocked.
+CHANGES_PATH=re.compile(r'\b(?:pip3?|pipx|conda|mamba|apt(?:-get)?|brew|npm|uv|cargo|go)\b[^;&|]*\binstall\b|\bPATH=|\bsource\b|(?:^|[;&|]\s*)\.\s|\bactivate\b|\b(?:npx|uvx|pipx run|poetry run|hatch run|uv run)\b')
+
+
 def invokes(command,name):
-    return re.search(COMMAND_START+re.escape(name)+r'(?=\s|$|[;&|)])',command) is not None
+    if CHANGES_PATH.search(command): return False
+    return re.search(COMMAND_START+re.escape(name)+r'(?=\s|$|[;&|)])',strip_quoted(command)) is not None
 
 
 def imports(command,module):
@@ -56,7 +61,10 @@ def blocks(spec,tool,data):
     if kind=='program-missing':
         if spec.get('via')=='read-pdf': return tool=='Read' and str(data.get('file_path','')).lower().endswith('.pdf')
         return bool(command) and invokes(command,spec['name'])
-    if kind=='module-missing': return bool(command) and imports(command,spec['name'])
+    # Whether a module imports depends on the working directory, interpreter and virtualenv, so it is not a stable
+    # machine fact: replaying 67k public runs, most blocks on it would have stopped an import that then worked
+    # (research/hook_replay.py). Module mistakes get an instruction line, never a block.
+    if kind=='module-missing': return False
     if kind=='shell-is-zsh' and spec.get('rule')=='zsh-equals-expansion':
         return bool(command) and EQUALS_WORD.search(strip_quoted(command)) is not None
     return False

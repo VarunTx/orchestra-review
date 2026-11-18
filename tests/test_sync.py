@@ -148,3 +148,13 @@ def test_install_is_idempotent_and_keeps_other_settings(isolated):
     assert hooks.uninstall(settings)
     data=json.loads(settings.read_text())
     assert data['hooks']=={'PreToolUse':[{'matcher':'Bash','hooks':[{'type':'command','command':'other'}]}]}
+
+
+def test_hook_never_blocks_module_imports_path_changes_or_quoted_text(isolated):
+    module=[failing(f'm{i}',"Traceback\nModuleNotFoundError: No module named 'fitz'",command='python3 -c "import fitz"') for i in range(3)]
+    sync(module+jq_sessions(3))
+    assert call('Bash',{'command':'python3 -c "import fitz"'}) is None  # module facts depend on cwd and venv
+    for command in ['export PATH=$PATH:/opt/jq/bin && jq . a','pip install jq && jq . a','source .venv/bin/activate && jq . a',
+                    'python3 -c "print(1); jq(2)"','npx jq . a']:
+        assert call('Bash',{'command':command}) is None,command
+    assert call('Bash',{'command':'cd x && jq . a'}) is not None

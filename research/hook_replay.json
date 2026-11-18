@@ -1,0 +1,15 @@
+{
+ "runs": 67074,
+ "runs_with_a_block": 87,
+ "repeat_failures": 802,
+ "blocked": 315,
+ "wrong_raw": 207,
+ "blocked_other_failure": 101,
+ "correct": 7,
+ "live_blocked": 10,
+ "live_blocked_then_succeeded": 4,
+ "precision": 0.0222,
+ "wrong_block_rate_raw": 0.6571,
+ "live_wrong_block_rate": 0.4,
+ "repeat_failures_prevented": 0.0087
+}

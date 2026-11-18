@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The hook no longer blocks imports of modules seen missing earlier. Replaying 67,074 public runs (`research/hook_replay.py`) showed such blocks would mostly have stopped imports that then worked, because importability depends on the working directory and virtualenv. Module mistakes still get an instruction line.
+- The hook never blocks a command that installs software or changes PATH itself (`export PATH=...`, `pip install ... &&`, `source .venv/bin/activate`, `npx`, `uv run`). It also ignores program names that appear only inside quoted code.
+- Program names starting with `-` are no longer read as missing programs.
+- All three readers now skip and count log lines with unexpected shapes, instead of crashing the whole report. Found by a new randomized damage test (`tests/test_fuzz.py`).
+
 ## 0.2.0 — 2026-11-16
 
 - `sync`: adds a rule-based line once a mistake has hit 3 sessions. A mistake seen in one project goes into that project's existing instruction file, otherwise into the agent's global file. `sync` never creates files inside a project.

@@ -61,7 +61,11 @@ orchestra-review --json                   # everything, as JSON
 - **Fix lines.** Lines come from built-in rules: missing programs and Python modules, zsh `=` and glob quirks, old-Python syntax, and misused file-viewing and editing tools. For other causes, a local model you run yourself (Ollama, `--model`) can draft a line. A draft is kept only if it names the cause and contains no URL or command that downloads or deletes anything, because log text is untrusted and the line ends up in a file your agent obeys. Drafted lines are never added automatically.
 - **`sync`.** It adds a rule-based line once a mistake has hit three sessions. If the mistake was seen in only one project, the line goes into that project's instruction file, but only if the file already exists; otherwise it goes into the agent's global file. Before keeping a line, `sync` re-checks its fact on this machine: is the program still missing, can the module still not be imported, is the shell still zsh? When a fact stops being true, for example after you install `poppler`, the line is removed and logged. A line you delete by hand, or remove with `undo`, is never added back.
 - **The hook.** `hook install` adds two Claude Code hooks to `~/.claude/settings.json`, keeping a `.bak` copy of the original:
-  - **Before a tool call** that would repeat a known mistake (running a missing program, importing a missing module, an unquoted zsh `=word`, or reading a PDF without `pdftoppm`), the hook re-checks the fact and blocks the call with the fix as the reason. The agent corrects course without the failed step. Glob mistakes are never blocked, because whether a glob matches depends on the directory at run time.
+  - **Before a tool call** that would repeat a known mistake (running a missing program, an unquoted zsh `=word`, or reading a PDF without `pdftoppm`), the hook re-checks the fact and blocks the call with the fix as the reason. The agent corrects course without the failed step.
+  - **Never blocked:**
+    - missing Python modules, because importability depends on the working directory and virtualenv (a replay of 67k public runs showed most such blocks would have been wrong; see [`research/`](research/));
+    - zsh glob mistakes, because whether a glob matches depends on the directory at run time;
+    - commands that install software or change PATH themselves.
   - **When a session ends,** the other hook runs `sync`.
 
   Any error in either hook lets the call through.

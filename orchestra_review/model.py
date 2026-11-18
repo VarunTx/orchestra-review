@@ -36,12 +36,12 @@ class Session:
     skipped_lines:int=0
 
     def seen(self,at):
-        if at is None: return
+        if not isinstance(at,datetime): return
         if self.started is None or at<self.started: self.started=at
         if self.ended is None or at>self.ended: self.ended=at
 
     def model(self,name):
-        if name and name not in self.models: self.models.append(name)
+        if isinstance(name,str) and name and name not in self.models: self.models.append(name)
 
 
 def kind_of(tool):
@@ -74,7 +74,7 @@ def tail(text,limit=240):
 
 
 def iso_time(value):
-    if not value: return None
+    if not isinstance(value,str) or not value: return None
     try: return datetime.fromisoformat(str(value).replace('Z','+00:00'))
     except ValueError: return None
 

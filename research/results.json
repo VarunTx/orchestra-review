@@ -10,7 +10,7 @@
  "runs_hitting_cross_repo_mistake": 41562,
  "resolve_rate_hit": 0.4449,
  "resolve_rate_clean": 0.5359,
- "rule_covered_failures": 47299,
+ "rule_covered_failures": 47152,
  "top": [
   {
    "tool": "read",
@@ -1005,18 +1005,6 @@
    "top_recoveries": []
   },
   {
-   "tool": "edit",
-   "cause": "]. No replacement was performed. `new_str` and `old_str` must be different.",
-   "runs": 124,
-   "repos": 99,
-   "failures": 135,
-   "resolve_rate": 0.5,
-   "category": "edit-no-change",
-   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
-   "recovered_share": 0.0,
-   "top_recoveries": []
-  },
-  {
    "tool": "read",
    "cause": "Invalid `view_range` parameter: [#, -#]. Its first element `#` should be within the range of lines of the file: [#, #].",
    "runs": 124,
@@ -1025,6 +1013,18 @@
    "resolve_rate": 0.2984,
    "category": "view-range-out-of-file",
    "rule_line": "Keep `view_range` inside the file: start at line 1 or later and end at or before the last line; use -1 as the end to read to the end of the file.",
+   "recovered_share": 0.0,
+   "top_recoveries": []
+  },
+  {
+   "tool": "edit",
+   "cause": "]. No replacement was performed. `new_str` and `old_str` must be different.",
+   "runs": 124,
+   "repos": 99,
+   "failures": 135,
+   "resolve_rate": 0.5,
+   "category": "edit-no-change",
+   "rule_line": "Don't call the edit tool with identical `old_str` and `new_str`; check the file first, the change may already be there.",
    "recovered_share": 0.0,
    "top_recoveries": []
   },

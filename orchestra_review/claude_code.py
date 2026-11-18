@@ -25,7 +25,7 @@ def load(root):
 def result_text(content):
     if isinstance(content,str): return content
     if isinstance(content,list):
-        return '\n'.join(p.get('text','') for p in content if isinstance(p,dict) and p.get('type')=='text')
+        return '\n'.join(str(p.get('text','')) for p in content if isinstance(p,dict) and p.get('type')=='text')
     return None
 
 
@@ -40,40 +40,46 @@ def read(path):
             try: entry=json.loads(line)
             except ValueError: s.skipped_lines+=1;continue
             if not isinstance(entry,dict): s.skipped_lines+=1;continue
-            kind=entry.get('type');at=iso_time(entry.get('timestamp'))
-            if kind in ('assistant','user'):
-                s.seen(at)
-                if entry.get('cwd') and not s.project: s.project=entry['cwd']
-            message=entry.get('message') if isinstance(entry.get('message'),dict) else {}
-            if kind=='assistant':
-                model=message.get('model')
-                if model and model!='<synthetic>': s.model(model)
-                for part in message.get('content') or []:
-                    if isinstance(part,dict) and part.get('type')=='tool_use':
-                        tool=str(part.get('name',''))
-                        step=Step(index=len(s.steps)+1,tool=tool,kind=kind_of(tool),target=target_of(tool,part.get('input')),at=at)
-                        s.steps.append(step);pending[part.get('id')]=step
-            elif kind=='user':
-                content=message.get('content')
-                if isinstance(content,str):
-                    if not entry.get('isMeta') and not entry.get('isCompactSummary'): s.prompts+=1
-                    continue
-                for part in content or []:
-                    if not isinstance(part,dict): continue
-                    if part.get('type')=='tool_result' and part.get('tool_use_id') in pending:
-                        step=pending.pop(part['tool_use_id'])
-                        text=result_text(part.get('content'))
-                        step.digest=digest(text)
-                        result=entry.get('toolUseResult') if isinstance(entry.get('toolUseResult'),dict) else {}
-                        if entry.get('toolDenialKind') or result.get('interrupted') or (text or '').startswith(BLOCKED):
-                            step.blocked=True;continue
-                        step.ok=not part.get('is_error')
-                        if not step.ok:
-                            step.error=tail(text)
-                            code=EXIT.match(text or '')
-                            if code: step.exit_code=int(code.group(1))
-                    elif part.get('type')=='text' and not entry.get('isMeta') and not entry.get('toolUseResult'):
-                        s.prompts+=1
-            elif kind=='custom-title' and entry.get('customTitle'):
-                s.title=entry['customTitle']
+            try: take(s,entry,pending)
+            except (TypeError,AttributeError,KeyError,ValueError): s.skipped_lines+=1  # a shape this version doesn't know
     return s
+
+
+def take(s,entry,pending):
+    """One transcript entry. Raises on shapes it does not know; read() counts those as skipped lines."""
+    kind=entry.get('type');at=iso_time(entry.get('timestamp'))
+    if kind in ('assistant','user'):
+        s.seen(at)
+        if isinstance(entry.get('cwd'),str) and not s.project: s.project=entry['cwd']
+    message=entry.get('message') if isinstance(entry.get('message'),dict) else {}
+    if kind=='assistant':
+        model=message.get('model')
+        if model!='<synthetic>': s.model(model)
+        for part in message.get('content') or []:
+            if isinstance(part,dict) and part.get('type')=='tool_use':
+                tool=str(part.get('name',''))
+                step=Step(index=len(s.steps)+1,tool=tool,kind=kind_of(tool),target=target_of(tool,part.get('input')),at=at)
+                s.steps.append(step);pending[part.get('id')]=step
+    elif kind=='user':
+        content=message.get('content')
+        if isinstance(content,str):
+            if not entry.get('isMeta') and not entry.get('isCompactSummary'): s.prompts+=1
+            return
+        for part in content or []:
+            if not isinstance(part,dict): continue
+            if part.get('type')=='tool_result' and part.get('tool_use_id') in pending:
+                step=pending.pop(part['tool_use_id'])
+                text=result_text(part.get('content'))
+                step.digest=digest(text)
+                result=entry.get('toolUseResult') if isinstance(entry.get('toolUseResult'),dict) else {}
+                if entry.get('toolDenialKind') or result.get('interrupted') or (text or '').startswith(BLOCKED):
+                    step.blocked=True;continue
+                step.ok=not part.get('is_error')
+                if not step.ok:
+                    step.error=tail(text)
+                    code=EXIT.match(text or '')
+                    if code: step.exit_code=int(code.group(1))
+            elif part.get('type')=='text' and not entry.get('isMeta') and not entry.get('toolUseResult'):
+                s.prompts+=1
+    elif kind=='custom-title' and isinstance(entry.get('customTitle'),str):
+        s.title=entry['customTitle']
