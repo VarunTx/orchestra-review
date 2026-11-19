@@ -4,6 +4,8 @@
 
 **Your coding agent keeps making the same mistakes, because every session starts with no memory of your machine or its tools.** It calls a program that isn't installed, imports a module from the wrong Python, or trips over the same shell quirk, week after week.
 
+**Try it in your browser: [review.varuntx.us](https://review.varuntx.us).** Drop your `.claude` or `.codex` folder; the analysis runs in the page and nothing is uploaded.
+
 Orchestra Review reads the session logs that Claude Code, Codex CLI and OpenCode already keep on your computer. It finds the mistakes that recur across sessions and fixes each with one instruction line. It can also block a known mistake before it runs, and it measures whether a fix actually worked. Nothing leaves your machine.
 
 ```sh
