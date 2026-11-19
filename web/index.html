@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orchestra Review</title>
+<meta name="description" content="Find the mistakes your coding agent keeps repeating. Drop your Claude Code or Codex logs; the analysis runs in your browser and nothing is uploaded.">
+<meta property="og:title" content="Orchestra Review">
+<meta property="og:description" content="Find the mistakes your coding agent keeps repeating, from the logs already on your machine. Runs in your browser; nothing is uploaded.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://review.varuntx.us/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <span class="brand">orchestra-review</span>
+    <nav>
+      <a href="https://github.com/VarunTx/orchestra-review">GitHub</a>
+      <a href="https://pypi.org/project/orchestra-review/">PyPI</a>
+      <a href="https://github.com/VarunTx/orchestra-review/tree/main/research">Research</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Find the mistakes your coding agent keeps repeating.</h1>
+    <p class="lede">Every session starts with no memory of your machine, so the agent calls the program that isn't installed, imports from the wrong Python and trips on the same shell quirk, week after week. Drop your Claude Code or Codex logs here to see which mistakes repeat and the one line that fixes each.</p>
+    <p class="promise"><span class="dot" aria-hidden="true"></span>The analysis runs in this tab. Your logs are never uploaded.</p>
+  </section>
+
+  <section id="drop" class="drop" aria-label="Drop your agent logs here">
+    <div class="drop-inner">
+      <p class="drop-title">Drop your <code>.claude</code> or <code>.codex</code> folder here</p>
+      <p class="drop-sub">or a zip made with the command below</p>
+      <div class="buttons">
+        <button id="pick-folder" type="button" class="primary">Choose a folder</button>
+        <button id="pick-zip" type="button">Choose a zip</button>
+      </div>
+      <input id="folder-input" type="file" webkitdirectory multiple hidden>
+      <input id="zip-input" type="file" accept=".zip,.jsonl,.json,.md" multiple hidden>
+    </div>
+    <div id="status" class="status" hidden>
+      <p id="status-text"></p>
+      <progress id="status-bar" max="1" value="0" hidden></progress>
+    </div>
+  </section>
+
+  <details class="where">
+    <summary>Where are my logs?</summary>
+    <div class="where-body">
+      <p><strong>Claude Code</strong> keeps them in <code>~/.claude/projects</code>, and <strong>Codex CLI</strong> in <code>~/.codex/sessions</code>. Both folders start with a dot, so the file picker hides them. On a Mac, press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>.</kbd> in the picker to show hidden folders, then choose <code>.claude</code> or <code>.codex</code> in your home folder.</p>
+      <p>Or run this in a terminal. It zips only the log files and your two global instruction files, so the report can also measure lines you already added.</p>
+      <div class="cmd"><code id="zip-command">cd ~ &amp;&amp; zip -qr ~/Desktop/agent-logs.zip .claude/projects .codex/sessions .claude/CLAUDE.md .codex/AGENTS.md -i '*.jsonl' '*/CLAUDE.md' '*/AGENTS.md'</code><button type="button" data-copy="zip-command">Copy</button></div>
+      <p class="hint">Then choose <code>agent-logs.zip</code> on your Desktop. Large histories (hundreds of MB) take a minute; nothing leaves your machine either way.</p>
+    </div>
+  </details>
+
+  <section class="report-section">
+    <div class="report-head">
+      <h2 id="report-label">Example report</h2>
+      <label id="public-row" class="toggle" hidden><input id="public" type="checkbox"> Hide paths and names, for screenshots</label>
+    </div>
+    <p id="example-note" class="example-note">Made-up logs from an imaginary developer, Sam, so you can see what a report looks like. Drop your own to replace it.</p>
+    <div id="report"></div>
+  </section>
+
+  <section class="how">
+    <h2>How it decides</h2>
+    <dl>
+      <div><dt>A repeated mistake</dt><dd>A failed tool call whose last error line matches a failure in another session, ignoring numbers and ids. Failing test runs don't count; the agent is checking its work.</dd></div>
+      <div><dt>The fix</dt><dd>One line for your agent's instruction file, from a rule written for that kind of mistake. The command-line version can add it for you and block known mistakes live in Claude Code.</dd></div>
+      <div><dt>Did it work</dt><dd>Lines added by <code>orchestra-review apply</code> carry a timestamp. The report counts only sessions that tried the same action, before and after, so a change of task can't pass for a cure.</dd></div>
+    </dl>
+    <p class="research">In 67,074 public coding-agent runs across 1,823 repositories, 41% of failures with an identifiable cause repeated a mistake seen in another repository. <a href="https://github.com/VarunTx/orchestra-review/tree/main/research">Method and limits</a>.</p>
+    <div class="cli">
+      <p>Want it in your terminal, with fixes added for you?</p>
+      <div class="cmd"><code id="install-command">pipx install orchestra-review</code><button type="button" data-copy="install-command">Copy</button></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Built by <a href="https://varuntx.us">Varun Talari</a>. Open source under the MIT licence.</p>
+  <p>No cookies and no trackers. The server counts page loads and finished reports, with no addresses and nothing from your logs.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
