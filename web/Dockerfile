@@ -23,5 +23,7 @@ RUN find orchestra_review -name '__pycache__' -prune -exec rm -rf {} + \
 FROM nginx:1.27-alpine
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /out /usr/share/nginx/html
+# Count lines are appended here; mount a volume at this path to keep them across deploys.
+RUN mkdir -p /var/log/counts
 EXPOSE 80
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO /dev/null http://127.0.0.1/healthz || exit 1
